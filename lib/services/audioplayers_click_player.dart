@@ -44,11 +44,20 @@ class AudioplayersClickPlayer implements ClickPlayer {
     if (!_ready || _disposed) return;
     final player = accent ? _accentPlayer : _normalPlayer;
     final source = accent ? _accentSource : _normalSource;
-    unawaited(
-      player.play(source, mode: PlayerMode.lowLatency).catchError((Object error) {
-        onError?.call(error);
-      }),
-    );
+    unawaited(() async {
+      // Android low-latency (SoundPool) mode never reports playback
+      // completion, so the plugin keeps its "playing" flag set forever after
+      // the first click: further play()/resume() calls then hit
+      // soundPool.resume() on an already-finished stream and produce silence
+      // while the UI keeps ticking (upstream: audioplayers #1489). stop()
+      // resets both the flag and the stream id — and re-requests audio focus
+      // — so every click starts a fresh stream and recovers on its own if
+      // focus was ever lost.
+      await player.stop();
+      await player.play(source, mode: PlayerMode.lowLatency);
+    }().catchError((Object error) {
+      onError?.call(error);
+    }));
   }
 
   @override

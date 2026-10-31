@@ -1,0 +1,32 @@
+name: guitar_trainer
+description: Guitar practice companion (Android, iOS and web) - metronome, note trainer and microphone tuner.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+  flutter: '>=3.22.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Metronome click playback (low-latency mode).
+  audioplayers: ^6.1.0
+  # Live PCM microphone stream for the tuner.
+  record: ^6.0.0
+  # Runtime microphone permission + "open settings" shortcut (Android / iOS).
+  permission_handler: ^12.0.0
+  # Web Audio / getUserMedia for the browser build (only compiled for web).
+  # Range kept wide so it works with the version pinned by your Flutter SDK.
+  web: '>=0.5.1 <2.0.0'
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  fake_async: ^1.3.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/

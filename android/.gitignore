@@ -1,8 +1,7 @@
-gradle-wrapper.jar
+# The Gradle wrapper (gradlew, gradlew.bat, gradle-wrapper.jar) IS committed:
+# CI needs it to build, and the jar is the official Gradle distribution checksum.
 /.gradle
 /captures/
-/gradlew
-/gradlew.bat
 /local.properties
 GeneratedPluginRegistrant.java
 .cxx/

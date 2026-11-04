@@ -1,5 +1,5 @@
 name: guitar_trainer
-description: Guitar practice companion (Android, iOS and web) - metronome, note trainer and microphone tuner.
+description: "FretFlow - guitar practice companion (Android, iOS and web): metronome, note trainer and microphone tuner."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -30,3 +30,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sounds/
+    - assets/images/

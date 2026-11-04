@@ -1,5 +1,6 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:guitar_trainer/models/click_sound.dart';
 import 'package:guitar_trainer/models/time_signature.dart';
 import 'package:guitar_trainer/services/metronome_service.dart';
 
@@ -225,6 +226,136 @@ void main() {
       expect(async.nonPeriodicTimerCount, 0);
       async.flushMicrotasks();
       expect(player.disposed, isTrue);
+    });
+  });
+
+  test('basic mode clicks identically on every beat, with no measure', () {
+    withMetronome((async, metronome, player) {
+      metronome.setMode(MetronomeMode.basic);
+      metronome.setBpm(120); // 500 ms
+      metronome.start();
+      async.elapse(const Duration(milliseconds: 2600)); // 0..2500 => 6 clicks
+      expect(player.clicks, [false, false, false, false, false, false]);
+      expect(metronome.currentBeat, -1); // no beat-in-measure concept
+      expect(metronome.pulseCount, 6);
+    });
+  });
+
+  test('basic mode ignores the advanced accent pattern', () {
+    withMetronome((async, metronome, player) {
+      metronome.setBeatAccent(1, true); // customised while still advanced
+      metronome.setMode(MetronomeMode.basic);
+      metronome.setBpm(120);
+      metronome.start();
+      async.elapse(const Duration(milliseconds: 1100)); // 0, 500, 1000
+      expect(player.clicks, [false, false, false]);
+    });
+  });
+
+  test('switching modes stops playback so the modes never overlap', () {
+    withMetronome((async, metronome, player) {
+      metronome.setBpm(120);
+      metronome.start();
+      async.elapse(const Duration(milliseconds: 600)); // 2 clicks
+      expect(player.clicks.length, 2);
+
+      metronome.setMode(MetronomeMode.basic);
+      expect(metronome.status, MetronomeStatus.stopped);
+      expect(async.nonPeriodicTimerCount, 0);
+      async.elapse(const Duration(seconds: 2));
+      expect(player.clicks.length, 2); // silence after the switch
+
+      metronome.start(); // the new mode restarts from beat one
+      expect(player.clicks.length, 3);
+      expect(player.clicks.last, isFalse);
+    });
+  });
+
+  test('custom per-beat accents drive the clicks (second beat accented)', () {
+    withMetronome((async, metronome, player) {
+      metronome.setBeatAccent(1, true);
+      metronome.setBpm(240); // 250 ms
+      metronome.start();
+      async.elapse(const Duration(milliseconds: 999)); // clicks at 0, 250, 500, 750
+      expect(player.clicks, [true, true, false, false]);
+    });
+  });
+
+  test('muted beats stay silent but keep their place in the measure', () {
+    withMetronome((async, metronome, player) {
+      metronome.setBeatEnabled(1, false);
+      metronome.setBpm(240); // 250 ms
+      metronome.start();
+      async.elapse(const Duration(milliseconds: 999)); // 4 beats
+      expect(player.clicks, [true, false, false]); // beat 2 silent
+      expect(metronome.pulseCount, 4); // the position indicator still advances
+      expect(metronome.currentBeat, 3);
+    });
+  });
+
+  test('sound set and volume are forwarded to the player', () async {
+    final player = FakeClickPlayer();
+    final metronome = MetronomeService(clickPlayer: player);
+    await metronome.init();
+
+    await metronome.setSound(ClickSound.woodblock);
+    expect(metronome.sound, ClickSound.woodblock);
+    expect(player.sounds, [ClickSound.woodblock]);
+
+    await metronome.setSound(ClickSound.woodblock); // same set: no reload
+    expect(player.sounds, [ClickSound.woodblock]);
+
+    metronome.setVolume(0.5);
+    expect(player.volume, 0.5);
+    metronome.setVolume(1.7); // clamped
+    expect(metronome.volume, 1.0);
+    expect(player.volume, 1.0);
+
+    metronome.dispose();
+  });
+
+  test('a failed sound switch keeps the old sound and reports an error', () async {
+    final player = FakeClickPlayer()..soundError = Exception('missing asset');
+    final metronome = MetronomeService(clickPlayer: player);
+    await metronome.init();
+
+    await metronome.setSound(ClickSound.digital);
+    expect(metronome.sound, ClickSound.classic); // unchanged
+    expect(metronome.audioError, isNotNull);
+
+    metronome.clearAudioError();
+    expect(metronome.audioError, isNull);
+    metronome.dispose();
+  });
+
+  test('7/8 has seven clicks per measure with an accent on the first', () {
+    withMetronome((async, metronome, player) {
+      metronome.setTimeSignature(TimeSignature.sevenEight);
+      expect(metronome.timeSignature.pulsesPerMeasure, 7);
+      expect(metronome.accentBeats.length, 7);
+      expect(metronome.beatEnabled.length, 7);
+      expect(metronome.accentBeats.first, isTrue);
+
+      metronome.setBpm(300); // 200 ms
+      metronome.start();
+      async.elapse(const Duration(milliseconds: 1599)); // clicks at 0..1400 => 8
+      expect(player.clicks, [true, false, false, false, false, false, false, true]);
+    });
+  });
+
+  test('reset restores tempo and beats but keeps mode and volume', () {
+    withMetronome((async, metronome, player) {
+      metronome.setMode(MetronomeMode.basic);
+      metronome.setVolume(0.4);
+      metronome.setBpm(200);
+      metronome.start();
+      async.elapse(const Duration(milliseconds: 500));
+
+      metronome.reset();
+      expect(metronome.mode, MetronomeMode.basic);
+      expect(metronome.volume, 0.4);
+      expect(metronome.bpm, 80);
+      expect(metronome.status, MetronomeStatus.stopped);
     });
   });
 }

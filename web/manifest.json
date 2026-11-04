@@ -1,11 +1,11 @@
 {
-    "name": "guitar_trainer",
-    "short_name": "guitar_trainer",
+    "name": "FretFlow",
+    "short_name": "FretFlow",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0C0E13",
+    "theme_color": "#0C0E13",
+    "description": "Master Your Rhythm. Know Your Notes. Perfect Your Tone.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

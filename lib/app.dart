@@ -6,8 +6,8 @@ import 'services/note_trainer_service.dart';
 import 'services/tuner_service.dart';
 import 'theme/app_theme.dart';
 
-class GuitarTrainerApp extends StatelessWidget {
-  const GuitarTrainerApp({
+class FretFlowApp extends StatelessWidget {
+  const FretFlowApp({
     super.key,
     this.metronomeService,
     this.trainerService,
@@ -22,7 +22,7 @@ class GuitarTrainerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Guitar Trainer',
+      title: 'FretFlow',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       home: HomeShell(

@@ -8,6 +8,7 @@ import '../services/metronome_service.dart';
 import '../services/note_trainer_service.dart';
 import '../services/tuner_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_header.dart';
 import 'metronome_screen.dart';
 import 'note_trainer_screen.dart';
 import 'tuner_screen.dart';
@@ -158,13 +159,25 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   ),
                 ),
                 const VerticalDivider(width: 1, thickness: 1, color: AppColors.outline),
-                Expanded(child: body),
+                Expanded(
+                  child: Column(
+                    children: [
+                      const AppHeader(),
+                      Expanded(child: body),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
         }
         return Scaffold(
-          body: body,
+          body: Column(
+            children: [
+              const AppHeader(),
+              Expanded(child: body),
+            ],
+          ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _index,
             onDestinationSelected: _onDestinationSelected,

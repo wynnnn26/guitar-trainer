@@ -3,13 +3,22 @@ import 'package:flutter/material.dart';
 import '../services/metronome_service.dart';
 import '../theme/app_theme.dart';
 
-/// Big pulsing disc that flashes on every click and shows the beat number.
-/// The downbeat (beat 1) flashes amber; other beats flash blue.
+/// Big pulsing disc that flashes on every click.
+///
+/// Advanced mode shows the beat number and flashes the accent colour on
+/// accented beats; with [showBeatNumber] = false (Basic metronome) it is a
+/// plain green pulse with a note glyph instead.
 class BeatPulse extends StatefulWidget {
-  const BeatPulse({super.key, required this.service, this.size = 148});
+  const BeatPulse({
+    super.key,
+    required this.service,
+    this.size = 148,
+    this.showBeatNumber = true,
+  });
 
   final MetronomeService service;
   final double size;
+  final bool showBeatNumber;
 
   @override
   State<BeatPulse> createState() => _BeatPulseState();
@@ -64,16 +73,32 @@ class _BeatPulseState extends State<BeatPulse> with SingleTickerProviderStateMix
       builder: (context, _) {
         final service = widget.service;
         final beat = service.currentBeat;
-        final isDownbeat = beat == 0;
+        final accents = service.accentBeats;
         final flash = 1 - Curves.easeOut.transform(_controller.value);
-        final flashColor = isDownbeat ? AppColors.accent : AppColors.beat;
+
+        final bool accented;
+        if (!widget.showBeatNumber) {
+          accented = true; // Basic mode: every click is the same green pulse.
+        } else {
+          accented = beat >= 0 && beat < accents.length && accents[beat];
+        }
+        final flashColor = accented ? AppColors.accent : AppColors.beat;
         final fill = Color.lerp(AppColors.surfaceHigh, flashColor, flash)!;
         final textColor = Color.lerp(AppColors.textPrimary, Colors.black, flash)!;
         final ringColor =
             service.status == MetronomeStatus.stopped ? AppColors.outline : flashColor.withAlpha(150);
 
+        final String semantics;
+        if (!widget.showBeatNumber) {
+          semantics = service.isRunning
+              ? 'Metronome running at ${service.bpm} BPM'
+              : 'Metronome $statusWord';
+        } else {
+          semantics = beat < 0 ? 'Metronome stopped' : 'Beat ${beat + 1}';
+        }
+
         return Semantics(
-          label: beat < 0 ? 'Metronome stopped' : 'Beat ${beat + 1}',
+          label: semantics,
           child: Transform.scale(
             scale: 1 + 0.08 * flash,
             child: Container(
@@ -92,19 +117,32 @@ class _BeatPulseState extends State<BeatPulse> with SingleTickerProviderStateMix
                   ),
                 ],
               ),
-              child: Text(
-                beat < 0 ? '–' : '${beat + 1}',
-                style: AppText.display(widget.size * 0.45, color: textColor),
-              ),
+              child: widget.showBeatNumber
+                  ? Text(
+                      beat < 0 ? '–' : '${beat + 1}',
+                      style: AppText.display(widget.size * 0.45, color: textColor),
+                    )
+                  : Icon(
+                      Icons.music_note_rounded,
+                      size: widget.size * 0.36,
+                      color: textColor,
+                    ),
             ),
           ),
         );
       },
     );
   }
+
+  String get statusWord => switch (widget.service.status) {
+        MetronomeStatus.running => 'running',
+        MetronomeStatus.paused => 'paused',
+        MetronomeStatus.stopped => 'stopped',
+      };
 }
 
-/// Row of small dots, one per beat of the measure, highlighting the current one.
+/// Row of small dots, one per beat of the measure, highlighting the current
+/// one. Accented beats are lime, normal beats blue, muted beats dim grey.
 class BeatDots extends StatelessWidget {
   const BeatDots({super.key, required this.service});
 
@@ -115,6 +153,8 @@ class BeatDots extends StatelessWidget {
     final signature = service.timeSignature;
     final current = service.currentBeat;
     final isActive = service.status != MetronomeStatus.stopped;
+    final accents = service.accentBeats;
+    final enabled = service.beatEnabled;
 
     final dots = <Widget>[];
     for (var i = 0; i < signature.pulsesPerMeasure; i++) {
@@ -122,7 +162,13 @@ class BeatDots extends StatelessWidget {
         dots.add(const SizedBox(width: 12));
       }
       final isCurrent = isActive && i == current;
-      final baseColor = i == 0 ? AppColors.accent : AppColors.beat;
+      final isOn = i < enabled.length && enabled[i];
+      final isAccented = i < accents.length && accents[i];
+      final baseColor = !isOn
+          ? AppColors.outline
+          : isAccented
+              ? AppColors.accent
+              : AppColors.beat;
       dots.add(
         AnimatedContainer(
           duration: const Duration(milliseconds: 90),

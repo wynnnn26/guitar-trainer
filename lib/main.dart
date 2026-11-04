@@ -12,5 +12,5 @@ void main() {
       systemNavigationBarColor: AppColors.surface,
     ),
   );
-  runApp(const GuitarTrainerApp());
+  runApp(const FretFlowApp());
 }

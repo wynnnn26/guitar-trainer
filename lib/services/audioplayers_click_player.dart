@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 
+import '../models/click_sound.dart';
 import 'click_player.dart';
 
 /// [ClickPlayer] for Android / iOS / desktop, backed by `audioplayers` in low-latency mode.
@@ -13,13 +14,12 @@ class AudioplayersClickPlayer implements ClickPlayer {
       : _accentPlayer = AudioPlayer(),
         _normalPlayer = AudioPlayer();
 
-  static const String _accentAsset = 'sounds/click_accent.wav';
-  static const String _normalAsset = 'sounds/click_normal.wav';
-
   final AudioPlayer _accentPlayer;
   final AudioPlayer _normalPlayer;
-  final AssetSource _accentSource = AssetSource(_accentAsset);
-  final AssetSource _normalSource = AssetSource(_normalAsset);
+
+  AssetSource _accentSource = AssetSource(ClickSound.classic.accentAsset);
+  AssetSource _normalSource = AssetSource(ClickSound.classic.normalAsset);
+  ClickSound _sound = ClickSound.classic;
 
   bool _ready = false;
   bool _disposed = false;
@@ -34,9 +34,41 @@ class AudioplayersClickPlayer implements ClickPlayer {
       await player.setReleaseMode(ReleaseMode.stop);
     }
     // Pre-loading also surfaces missing/corrupt assets immediately.
-    await _accentPlayer.setSource(_accentSource);
-    await _normalPlayer.setSource(_normalSource);
+    await _preload(ClickSound.classic);
     _ready = true;
+  }
+
+  @override
+  Future<void> setSound(ClickSound sound) async {
+    if (_disposed || sound == _sound) return;
+    await _preload(sound);
+  }
+
+  /// Loads both variants of [sound]. The sources are only swapped once both
+  /// players accepted them, so a failed switch keeps the old sound.
+  Future<void> _preload(ClickSound sound) async {
+    final accent = AssetSource(sound.accentAsset);
+    final normal = AssetSource(sound.normalAsset);
+    await _accentPlayer.setSource(accent);
+    await _normalPlayer.setSource(normal);
+    _accentSource = accent;
+    _normalSource = normal;
+    _sound = sound;
+  }
+
+  @override
+  void setVolume(double volume) {
+    final level = volume.clamp(0.0, 1.0);
+    unawaited(
+      _accentPlayer.setVolume(level).catchError((Object error) {
+        onError?.call(error);
+      }),
+    );
+    unawaited(
+      _normalPlayer.setVolume(level).catchError((Object error) {
+        onError?.call(error);
+      }),
+    );
   }
 
   @override

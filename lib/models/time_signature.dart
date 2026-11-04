@@ -20,6 +20,7 @@ class TimeSignature {
   static const TimeSignature fourFour = TimeSignature(4, 4);
   static const TimeSignature fiveFour = TimeSignature(5, 4);
   static const TimeSignature sixEight = TimeSignature(6, 8, groupSize: 3);
+  static const TimeSignature sevenEight = TimeSignature(7, 8);
 
   static const List<TimeSignature> presets = [
     twoFour,
@@ -27,6 +28,7 @@ class TimeSignature {
     fourFour,
     fiveFour,
     sixEight,
+    sevenEight,
   ];
 
   @override

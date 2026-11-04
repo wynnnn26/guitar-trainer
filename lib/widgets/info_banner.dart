@@ -9,11 +9,15 @@ class InfoBanner extends StatelessWidget {
     required this.message,
     this.icon = Icons.info_outline,
     this.color = AppColors.accent,
+    this.onDismiss,
   });
 
   final String message;
   final IconData icon;
   final Color color;
+
+  /// When set, shows a close button so the user can dismiss the message.
+  final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +43,15 @@ class InfoBanner extends StatelessWidget {
               ),
             ),
           ),
+          if (onDismiss != null)
+            IconButton(
+              onPressed: onDismiss,
+              tooltip: 'Dismiss',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              icon: Icon(Icons.close, size: 18, color: color),
+            ),
         ],
       ),
     );

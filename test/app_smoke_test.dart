@@ -28,7 +28,7 @@ void main() {
     final mic = FakeMicrophone();
     final tuner = TunerService(microphone: mic, permission: FakePermission());
 
-    await tester.pumpWidget(GuitarTrainerApp(
+    await tester.pumpWidget(FretFlowApp(
       metronomeService: metronome,
       trainerService: trainer,
       tunerService: tuner,
@@ -86,7 +86,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     final trainer = NoteTrainerService(random: Random(1));
-    await tester.pumpWidget(GuitarTrainerApp(
+    await tester.pumpWidget(FretFlowApp(
       metronomeService: MetronomeService(clickPlayer: FakeClickPlayer()),
       trainerService: trainer,
       tunerService: TunerService(microphone: FakeMicrophone(), permission: FakePermission()),
@@ -106,6 +106,53 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.text('Start Training'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('metronome modes: Basic has no time signatures and identical clicks',
+      (tester) async {
+    tester.view.physicalSize = const Size(500, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final player = FakeClickPlayer();
+    final metronome = MetronomeService(clickPlayer: player);
+    await tester.pumpWidget(FretFlowApp(
+      metronomeService: metronome,
+      trainerService: NoteTrainerService(random: Random(5)),
+      tunerService: TunerService(microphone: FakeMicrophone(), permission: FakePermission()),
+    ));
+    await tester.pump();
+
+    // Advanced is the default: signature and beat customisation visible.
+    expect(find.text('TIME SIGNATURE'), findsOneWidget);
+    expect(find.text('4/4'), findsOneWidget);
+    expect(find.text('BEATS'), findsOneWidget);
+
+    // Switch to Basic: no time signature or beat customisation UI at all.
+    await tester.tap(find.text('Basic'));
+    await tester.pump();
+    expect(metronome.mode, MetronomeMode.basic);
+    expect(find.text('TIME SIGNATURE'), findsNothing);
+    expect(find.text('4/4'), findsNothing);
+    expect(find.text('BEATS'), findsNothing);
+    expect(find.text('Stopped'), findsOneWidget);
+
+    // Start: identical, unaccented clicks at the BPM interval (80 = 750 ms).
+    await tester.tap(find.text('Start'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 760));
+    expect(metronome.status, MetronomeStatus.running);
+    expect(player.clicks, [false, false]);
+    expect(find.text('Running'), findsOneWidget);
+
+    // Switching modes while running stops playback: no overlapping audio.
+    await tester.tap(find.text('Advanced'));
+    await tester.pump();
+    expect(metronome.status, MetronomeStatus.stopped);
+    expect(player.clicks.length, 2);
+    expect(find.text('TIME SIGNATURE'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

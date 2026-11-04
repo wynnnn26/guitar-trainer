@@ -2,7 +2,8 @@ import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 
-/// Colour palette: dark, music-inspired, amber accent.
+/// Colour palette: dark, music-inspired, FretFlow lime accent (sampled from
+/// the app logo).
 class AppColors {
   AppColors._();
 
@@ -11,7 +12,7 @@ class AppColors {
   static const Color surfaceHigh = Color(0xFF1F232D);
   static const Color outline = Color(0xFF2A2F3B);
 
-  static const Color accent = Color(0xFFFFB347); // amber
+  static const Color accent = Color(0xFFB4FF43); // FretFlow lime
   static const Color beat = Color(0xFF6EA8FF); // regular beats
   static const Color good = Color(0xFF38D996); // in tune / completed
   static const Color bad = Color(0xFFFF6B6B); // far out of tune / errors
@@ -82,7 +83,7 @@ ThemeData buildAppTheme() {
       activeTrackColor: AppColors.accent,
       inactiveTrackColor: AppColors.outline,
       thumbColor: AppColors.accent,
-      overlayColor: Color(0x29FFB347),
+      overlayColor: Color(0x29B4FF43),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(

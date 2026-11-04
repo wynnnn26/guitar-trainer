@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:guitar_trainer/models/click_sound.dart';
 import 'package:guitar_trainer/services/click_player.dart';
 import 'package:guitar_trainer/services/mic_permission_service.dart';
 import 'package:guitar_trainer/services/microphone_service.dart';
@@ -7,7 +8,12 @@ import 'package:guitar_trainer/services/microphone_service.dart';
 class FakeClickPlayer implements ClickPlayer {
   /// One entry per click: `true` = accented (downbeat).
   final List<bool> clicks = [];
+
+  /// Every [setSound] call (the initial load goes through [init]).
+  final List<ClickSound> sounds = [];
+  double? volume;
   Object? initError;
+  Object? soundError;
   bool initialised = false;
   bool disposed = false;
 
@@ -19,6 +25,15 @@ class FakeClickPlayer implements ClickPlayer {
     if (initError != null) throw initError!;
     initialised = true;
   }
+
+  @override
+  Future<void> setSound(ClickSound sound) async {
+    if (soundError != null) throw soundError!;
+    sounds.add(sound);
+  }
+
+  @override
+  void setVolume(double level) => volume = level;
 
   @override
   void play({required bool accent}) => clicks.add(accent);
